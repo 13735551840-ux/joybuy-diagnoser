@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>JoyBuy Search Case Diagnoser v4</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f6fa;color:#333}
+.app{max-width:800px;margin:0 auto;padding:20px}
+.header{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.header h1{font-size:22px;color:#1a1a2e}.badge{background:#5856d6;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700}
+.sub{font-size:13px;color:#888;width:100%;margin-top:-6px}
+.search-card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:16px}
+.search-row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.search-field{flex:1;min-width:200px}
+.search-field label{display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:4px}
+.search-field input{width:100%;padding:10px 12px;border:2px solid #e0e0e0;border-radius:10px;font-size:14px;transition:.2s;outline:none;font-family:inherit}
+.search-field input:focus{border-color:#1a73e8}
+.hint{font-size:11px;color:#999;margin-top:4px}
+.action-row{display:flex;gap:8px;flex-shrink:0}
+.btn-primary{background:#1a73e8;color:#fff;border:none;padding:10px 22px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn-primary:hover{background:#1557b0}.btn-primary:disabled{background:#93b8f0;cursor:not-allowed}
+.btn-secondary{background:#f0f0f0;color:#555;border:1px solid #ddd;padding:10px 18px;border-radius:10px;font-size:13px;cursor:pointer;white-space:nowrap}
+.loading-bar{height:4px;background:#e0e0e0;border-radius:2px;margin:0 0 16px;overflow:hidden;display:none}
+.loading-bar.active{display:block}
+.loading-bar .bar{height:100%;width:0%;background:linear-gradient(90deg,#1a73e8,#34c759);border-radius:2px;transition:width .3s}
+.tabs{display:flex;gap:4px;margin-bottom:16px}
+.tab{background:#fff;border:none;padding:10px 18px;border-radius:10px 10px 0 0;font-size:13px;font-weight:500;color:#888;cursor:pointer}
+.tab.active{color:#1a73e8;background:#fff;box-shadow:0 -2px 6px rgba(0,0,0,.04)}
+.tab .count{display:inline-block;background:#f0f0f0;color:#888;padding:0 6px;border-radius:8px;font-size:11px;margin-left:4px}
+.report-card{background:#fff;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,.04);margin-bottom:12px;overflow:hidden}
+.section-header{display:flex;align-items:center;gap:10px;padding:14px 18px;cursor:pointer;user-select:none}
+.step{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;color:#fff;font-size:13px;font-weight:700;background:#888;flex-shrink:0}
+.step-green{background:#34c759}.step-yellow{background:#ff9500}.step-blue{background:#1a73e8}.step-red{background:#ff3b30}
+.sct-h3{font-size:14px;font-weight:600;flex:1}
+.st{font-size:12px;padding:3px 10px;border-radius:12px;font-weight:500;white-space:nowrap}
+.sg{background:#e8f5e9;color:#2e7d32}.sd{background:#ffebee;color:#c62828}.sw{background:#fff8e1;color:#f57f17}.si{background:#e3f2fd;color:#1565c0}
+.arrow{color:#999;font-size:14px;transition:transform .2s}.arrow.d{transform:rotate(-90deg);display:inline-block}
+.sb{padding:0 18px 16px;display:none}.sb.open{display:block}
+.metrics{display:flex;gap:12px;flex-wrap:wrap}
+.metric{flex:1;min-width:100px;background:#f8f9fa;border-radius:10px;padding:12px}
+.metric .l{font-size:11px;color:#888;text-transform:uppercase;font-weight:600}
+.metric .v{font-size:20px;font-weight:700;color:#1a1a2e;margin:4px 0}
+.metric .sn{font-size:11px;color:#999}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{font-size:12px;padding:4px 10px;border-radius:14px;background:#f0f0f0;color:#555}
+.chip-h{background:#e8f5e9;color:#2e7d32}.chip-m{background:#ffebee;color:#c62828}
+.issues{display:flex;flex-direction:column;gap:10px}
+.ise{display:flex;gap:10px;padding:12px;border-radius:10px;background:#f8f9fa;border-left:3px solid #ff9500}
+.ise.s{border-left-color:#ff3b30}.ise.n{border-left-color:#ff9500}
+.ise .ic{font-size:16px;flex-shrink:0;margin-top:1px}
+.ise .bd{flex:1}.ise .bd .tt{font-weight:600;color:#1a1a2e;margin-bottom:2px;font-size:13px}
+.ise .bd .dt{color:#666;font-size:13px;line-height:1.5}
+.sug{background:linear-gradient(135deg,#f0f6ff,#f5f0ff);border-radius:10px;padding:14px 16px;border-left:3px solid #1a73e8}
+.sug .lb{font-size:11px;font-weight:700;color:#1a73e8;text-transform:uppercase;margin-bottom:4px}
+.sug .tx{font-size:13px;color:#333;line-height:1.6}
+.sug .ex{font-size:12px;color:#34c759;margin-top:6px;font-weight:500}
+.relevance-bar{display:flex;align-items:center;gap:12px;padding:4px 0}
+.rl-dot{width:16px;height:16px;border-radius:50%;flex-shrink:0}
+.rl-dot.high{background:#34c759}.rl-dot.weak{background:#ff9500}.rl-dot.none{background:#ff3b30}
+.rl-label{font-size:18px;font-weight:700;flex:1}
+.rl-detail{font-size:13px;color:#888;margin-top:8px;line-height:1.5}
+.ct{width:100%;border-collapse:collapse;font-size:13px}
+.ct th{text-align:left;padding:8px 10px;border-bottom:2px solid #eee;font-size:11px;color:#888;text-transform:uppercase}
+.ct td{padding:8px 10px;border-bottom:1px solid #f0f0f0}
+.ct tr.hl{background:#f0f6ff}
+.ct .rk{font-weight:700}.rk1{color:#ff9500}
+.ba{display:flex;gap:10px;justify-content:flex-end;padding:16px 20px;flex-wrap:wrap}
+.btno{background:#fff;color:#555;border:1px solid #ddd;padding:8px 18px;border-radius:8px;font-size:13px;cursor:pointer}
+.btno:hover{border-color:#1a73e8;color:#1a73e8}
+.es{text-align:center;padding:50px 20px;color:#999}
+.es .eic{font-size:48px;margin-bottom:12px}
+.es h3{font-size:16px;color:#555;margin-bottom:6px}
+.es p{font-size:13px;color:#888;max-width:420px;margin:0 auto;line-height:1.6}
+.sbanner{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;border-radius:12px;padding:16px 20px;margin-bottom:16px;display:none}
+.sbanner .stt{font-size:15px;font-weight:700;margin-bottom:4px}
+.sbanner .rw{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px}
+.sbanner .st{text-align:center;min-width:50px}
+.sbanner .st .nm{font-size:24px;font-weight:700}
+.sbanner .st .lb{font-size:11px;color:#aaa;margin-top:2px}
+.sttag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600;margin-left:4px}
+.sth{background:#ff3b30;color:#fff}.stm{background:#ff9500;color:#fff}
+.hi{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid #f0f0f0;font-size:13px;flex-wrap:wrap}
+.hi:last-child{border-bottom:none}
+.hi .hq{font-weight:600;min-width:100px}.hi .hs{color:#666;font-family:monospace;font-size:12px;min-width:80px}
+.hi .ht{color:#999;font-size:12px}.hi .ha{margin-left:auto}
+@media(max-width:640px){
+  .search-row{flex-direction:column}
+  .action-row button{flex:1;text-align:center}
+  .ba{justify-content:center}
+  .sbanner .rw{gap:10px}
+  .sbanner .st .nm{font-size:18px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>🔍 JoyBuy Case Diagnoser</h1>
+    <span class="badge">v4</span>
+    <span class="sub">搜索日常Case排查 · 输入任意 Query 和 SKUID 体验完整诊断流程</span>
+  </div>
+  <div class="search-card">
+    <div class="search-row">
+      <div class="search-field">
+        <label>关键词（Query）</label>
+        <input type="text" id="q" value="wireless earbuds" placeholder="e.g. wireless earbuds">
+      </div>
+      <div class="search-field">
+        <label>SKUID</label>
+        <input type="text" id="s" value="JB12345678" placeholder="e.g. JB12345678">
+        <div class="hint">支持多个，用逗号分隔（最多10个）</div>
+      </div>
+      <div class="action-row">
+        <button class="btn-primary" id="runBtn" onclick="run()">🚀 立即诊断</button>
+        <button class="btn-secondary" onclick="st('history')">📋 历史</button>
+      </div>
+    </div>
+  </div>
+  <div class="loading-bar" id="loading"><div class="bar" id="prog"></div></div>
+  <div class="tabs">
+    <button class="tab active" id="tR" onclick="st('report')">📊 诊断报告</button>
+    <button class="tab" id="tH" onclick="st('history')">📁 诊断历史 <span class="count" id="hCnt">0</span></button>
+  </div>
+  <div id="reportArea">
+    <div id="emptyState">
+      <div class="report-card"><div class="es">
+        <div class="eic">🔎</div><h3>输入关键词和 SKUID 开始诊断</h3>
+        <p>输入任意 Query 和 SKUID，点击"立即诊断"，系统将 Mock 生成完整的五步诊断报告。</p>
+        <div style="margin-top:16px;font-size:13px;color:#aaa">💡 试试搜索 "wireless earbuds" + "JB12345678"</div>
+      </div></div>
+    </div>
+    <div id="reportContent" style="display:none"></div>
+  </div>
+  <div id="historyArea" style="display:none">
+    <div class="report-card">
+      <div style="padding:14px 18px;font-size:12px;color:#888;border-bottom:1px solid #f0f0f0">诊断记录（保存在本地浏览器）</div>
+      <div id="hList" style="padding:0"></div>
+    </div>
+  </div>
+</div>
+<script>
+// ====== 工具 ======
+function hc(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0}return h}
+function tb(el){const b=el.nextElementSibling;const a=el.querySelector('.arrow');if(b.classList.contains('open')){b.classList.remove('open');a.classList.add('d')}else{b.classList.add('open');a.classList.remove('d')}}
+
+// ====== 相关性等级与原因解释（由搜索团队API返回，这里Mock） ======
+function genRelevance(seed, query, skuInfo){
+  // 搜索团队 API 返回的相关性等级：high / weak / none
+  // 逻辑：看关键词命中、类目一致性、品牌匹配、属性覆盖
+  const words=query.trim().toLowerCase().split(/\s+/).filter(w=>w.length>1);
+  const title=skuInfo.title.toLowerCase();
+  const bullets=skuInfo.bulletPoints.map(b=>b.toLowerCase());
+  const attrs=Object.keys(skuInfo.attributes).map(k=>k.toLowerCase());
+  const cat=skuInfo.category.toLowerCase();
+
+  // 命中分析
+  const hitWords=words.filter(w=>title.includes(w)||bullets.some(b=>b.includes(w)));
+  const missWords=words.filter(w=>!hitWords.includes(w));
+  const hitRate=words.length>0?hitWords.length/words.length:0;
+
+  // 类目：Query意图类目 vs 实际类目
+  const intentCat=seed>0.5?'earbuds':'headphones';
+  const catMatch=cat.includes(intentCat);
+
+  // 品牌匹配
+  const brandNames=['sony','samsung','apple','bose','anker','tozo','xiaomi','huawei','jbl','beats'];
+  const brandInQuery=words.some(w=>brandNames.includes(w));
+  const brandMatch=brandInQuery?brandNames.some(b=>skuInfo.brand.toLowerCase().includes(b)):true;
+
+  // 属性覆盖
+  const coreAttrs=['connection type','battery life','noise cancellation','waterproof'];
+  const attrCoverage=coreAttrs.filter(a=>attrs.some(k=>k.includes(a)||a.includes(k))).length/coreAttrs.length;
+
+  // 综合判定等级
+  // 高相关：hitRate≥0.6 AND catMatch AND (brandMatch OR !brandInQuery)
+  // 弱相关：hitRate≥0.3 OR catMatch OR attrCoverage≥0.5
+  // 不相关：以上都不满足
+  let level='none';
+  if(hitRate>=0.6 && catMatch && (brandMatch||!brandInQuery) && attrCoverage>=0.5){
+    level='high';
+  } else if(hitRate>=0.3 || catMatch || attrCoverage>=0.5){
+    level='weak';
+  } else {
+    level='none';
+  }
+  // 随机注入一些变化让不同输入有不同结果
+  if(seed<0.2) level='none';
+  else if(seed<0.5&&level==='high') level='weak';
+
+  // 生成原因
+  const reasons=[];
+  // 文本命中原因
+  if(hitRate>=0.6){
+    reasons.push('✅ 关键词覆盖良好："'+hitWords.join('", "')+'" 均出现在 Title 和 Bullet Points 中');
+  } else if(missWords.length>0){
+    reasons.push('⚠️ 关键词覆盖不足："'+missWords.join('", "')+'" 未在 Title 或 Bullet Points 中出现');
+  } else {
+    reasons.push('⚠️ 商品信息中关键词密度偏低，低于同类目 Top 商品的平均水平');
+  }
+  // 类目原因
+  if(catMatch){
+    reasons.push('✅ 类目一致：SKU 挂载类目与 Query 意图类目匹配');
+  } else {
+    const curCatName=skuInfo.category.split('>').pop().trim();
+    reasons.push('⚠️ 类目偏差：当前挂载 "'+curCatName+'"，Query 意图类目为 "'+intentCat.charAt(0).toUpperCase()+intentCat.slice(1)+'s"');
+  }
+  // 品牌原因
+  if(!brandMatch){
+    const qBrand=words.find(w=>brandNames.includes(w));
+    reasons.push('⚠️ 品牌不匹配：Query 含品牌词 "'+qBrand+'"（若有），但当前 SKU 品牌为 "'+skuInfo.brand+'"');
+  } else if(brandInQuery){
+    reasons.push('✅ 品牌匹配：Query 品牌词与 SKU 品牌一致');
+  }
+  // 属性原因
+  if(attrCoverage<0.5){
+    const missing=coreAttrs.filter(a=>!attrs.some(k=>k.includes(a)||a.includes(k)));
+    reasons.push('⚠️ 核心属性缺失：缺少 "'+missing.slice(0,2).join('", "')+'" 等属性，影响排序模型对相关性的判断');
+  } else {
+    reasons.push('✅ 核心属性覆盖完整');
+  }
+  // 同类目竞品对比
+  reasons.push('📊 同类目 Top 商品中，相关性等级为 "高相关" 的占比 '+Math.floor(40+seed*50)+'%，该类目下相关性竞争较为激烈');
+
+  return {level, reasons, hitRate, catMatch, brandMatch, attrCoverage};
+}
+
+// ====== Mock 引擎 ======
+function run(){
+  const q=document.getElementById('q').value;const s=document.getElementById('s').value;
+  if(!q.trim()||!s.trim()){alert('请输入关键词和SKUID');return}
+  document.getElementById('runBtn').disabled=true;
+  document.getElementById('loading').classList.add('active');
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('reportContent').style.display='none';
+  const pb=document.getElementById('prog');pb.style.width='0%';let p=0;
+  const iv=setInterval(()=>{p+=Math.floor(Math.random()*15)+5;if(p>100)p=100;pb.style.width=p+'%';if(p>=100)clearInterval(iv)},200);
+  setTimeout(()=>{
+    clearInterval(iv);pb.style.width='100%';
+    const html=genRpt(q,s);
+    document.getElementById('reportContent').innerHTML=html;
+    document.getElementById('reportContent').style.display='block';
+    document.getElementById('loading').classList.remove('active');
+    document.getElementById('runBtn').disabled=false;
+    st('report');
+    document.querySelectorAll('.sb').forEach(el=>el.classList.add('open'));
+  },1200);
+}
+function st(t){
+  document.getElementById('reportArea').style.display=t==='report'?'block':'none';
+  document.getElementById('historyArea').style.display=t==='history'?'block':'none';
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.getElementById(t==='report'?'tR':'tH').classList.add('active');
+}
+
+function genRpt(query, sku){
+  const q=query.trim().toLowerCase();const s=sku.trim();
+  const h=Math.abs(hc(q+','+s));const seed=(h%9973)/9973;
+  const words=q.split(/\s+/).filter(w=>w.length>1);
+  const brands=['Sony','Samsung','Bose','Apple','Anker','TOZO','SoundPEATS','EarFun','JLab','Skullcandy','Xiaomi','Huawei','JBL','Beats','Baseus','UGREEN','Aukey','Belkin','Generic','NewBrand'];
+
+  // SKU info
+  const skuInfo={
+    title: words.length>1?words.map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ')+' with Mic':'Portable Audio Device',
+    category: seed>0.5?'Electronics > Headphones > Wireless Headphones':'Electronics > Earbuds & Earphones',
+    brand: brands[Math.floor(seed*brands.length)],
+    price: Math.floor(10+seed*90),
+    stock: Math.floor(seed*200),
+    rating: (2.0+seed*2.5).toFixed(1),
+    reviews: Math.floor(seed*500),
+    bulletPoints: seed>0.6?['High quality sound','Long battery life','Comfortable fit']:['Portable design'],
+    attributes: seed>0.5?{ConnectionType:'Bluetooth',BatteryLife:'8 hours',Color:'Black'}:{Color:'Black'}
+  };
+
+  // 相关性（由搜索团队API返回等级+原因）
+  const rel=genRelevance(seed, query, skuInfo);
+
+  // 召回
+  const recalled=seed>0.1;
+  const hitWords=words.filter((w,i)=>seed>0.25||w.length<5);
+  const missWords=words.filter(w=>!hitWords.includes(w));
+  const pool=['bluetooth','wireless','noise cancelling','waterproof','charging case','battery life','mic'];
+  const ext=pool.filter(w=>!words.includes(w)).sort((a,b)=>hc(a+seed)%3-hc(b+seed)%3).slice(0,2);
+
+  // 排序
+  const tot=Math.floor(300+seed*3200);const rk=recalled?Math.floor(3+seed*140):null;
+  const crk=recalled?Math.floor(2+seed*50):null;
+  const comp=brands.sort((a,b)=>hc(a+s)%7-hc(b+s)%5).slice(0,5).map((b,i)=>({
+    rank:i+1,sku:s.slice(0,4)+(100000+Math.floor(seed*90000+i*1111)).toString().slice(-6),
+    title:b+' '+q.split(' ').slice(0,2).join(' ')+' '+['Pro','Max','Bluetooth 5.3','Noise Cancelling'][Math.floor(seed*4)],
+    price:Math.floor(10+seed*(150-i*15)),rating:(3.0+seed*2.0-Math.random()*0.5).toFixed(1)
+  }));
+
+  // Issues
+  const issuesPool=[
+    {sev:'s',ic:'🔴',tt:'Title 缺少关键信息',dt:'当前 Title "'+skuInfo.title+'" 缺少品牌、型号、核心属性词。Top 竞品 Title 均包含 "品牌+型号+属性" 的完整结构。'},
+    {sev:'s',ic:'🔴',tt: rel.level==='none'?'相关性等级为"不相关"':rel.level==='weak'?'相关性等级为"弱相关"':'类目挂载偏差',dt: rel.level==='none'||rel.level==='weak'?'搜索团队判定该 SKU 与该 Query 相关性不足，主要原因是关键词覆盖不足和/或类目偏差。':'当前挂载类目与 Query 意图类目不匹配，影响排序权重。'},
+    {sev:'n',ic:'🟡',tt:'评价数量不足',dt:'当前仅 '+skuInfo.reviews+' 条评价，评分 '+skuInfo.rating+'。Top30 竞品平均 '+Math.floor(100+seed*400)+' 条。'},
+    {sev:'n',ic:'🟡',tt:'属性完整性不足',dt:'缺少 "Connection Type"、"Battery Life"、"Noise Cancellation" 等核心属性。'}
+  ];
+  const selected=issuesPool.sort((a,b)=>hc(a.tt+seed)%5-hc(b.tt+seed)%3).slice(0,3+Math.floor(seed*3));
+  const sc=selected.filter(i=>i.sev==='s').length;const nc=selected.filter(i=>i.sev==='n').length;
+
+  // Suggestions
+  const sugP=[
+    {t:'📝',tt:'优化商品 Title',tx:'建议改为：<strong>"[品牌] [型号] '+query+' Bluetooth 5.3 with Noise Cancelling, 48H Battery Life"</strong>',ep:'排名预计从第 '+rk+' 位提升至前 10-15 位'},
+    {t:'📂',tt:'调整商品类目',tx:'建议迁移至 <code>Electronics > Earbuds & Earphones</code>。'+Math.floor(70+seed*25)+'% 的 Top100 商品在该类目下。',ep:'类目一致后可提升 3-5 个排位'},
+    {t:'⭐',tt:'提升评价与评分',tx:'当前评价 '+skuInfo.reviews+' 条 / 评分 '+skuInfo.rating+'。建议促销积累评价至 50+，评分提至 4.0。',ep:'预计提升 5-8 个排位'},
+    {t:'🏷️',tt:'补充商品属性',tx:'补充 Connection Type、Battery Life、Noise Cancellation 等属性。',ep:'语义匹配效果提升 10-15%'}
+  ];
+  const selSug=sugP.slice(0,selected.length);
+
+  // ---- 构建HTML ----
+  // 相关性等级展示——无分数，只有等级+原因列表
+  const levelMap={
+    high:{dot:'high',label:'🟢 高相关',tagClass:'sg'},
+    weak:{dot:'weak',label:'🟡 弱相关',tagClass:'sw'},
+    none:{dot:'none',label:'🔴 不相关',tagClass:'sd'}
+  };
+  const lv=levelMap[rel.level];
+
+  // 相关性原因列表
+  const reasonHtml=rel.reasons.map(r=>`<div style="font-size:13px;color:#555;line-height:1.6;padding:4px 0">${r}</div>`).join('');
+
+  function chip(w,hit){return '<span class="chip chip-'+(hit?'h':'m')+'">'+(hit?'✅':'❌')+' '+w+'</span>'}
+  const hitHtml=hitWords.map(w=>chip(w,1)).join('');const missHtml=[...missWords,...ext].map(w=>chip(w,0)).join('');
+  const allMissHtml=words.map(w=>chip(w,0)).join('');
+
+  const s1=recalled?`
+  <div class="report-card"><div class="section-header" onclick="tb(this)">
+  <span class="step step-green">1</span><div class="sct-h3">召回检查</div>
+  <span class="st sg">✅ 已召回</span><span class="arrow">▾</span></div>
+  <div class="sb open"><div style="font-size:14px;color:#333;padding:8px 0">该 SKU 在此 Query 下已被成功召回。</div></div></div>`
+  :`<div class="report-card"><div class="section-header" onclick="tb(this)">
+  <span class="step step-red">1</span><div class="sct-h3">召回检查</div>
+  <span class="st sd">❌ 未召回</span><span class="arrow">▾</span></div>
+  <div class="sb open"><div class="issues"><div class="ise s"><span class="ic">🚫</span><div class="bd"><div class="tt">该 SKU 未在此 Query 下被召回</div><div class="dt">商品 Title / Description / Bullet Points 中未包含 Query 中的任何关键匹配词</div></div></div></div>
+  <div class="chips">${allMissHtml}</div>
+  <div class="sug" style="margin-top:10px"><div class="lb">💡 改善建议</div><div class="tx">请在商品 Title 中补充核心产品词 "${query}"。</div><div class="ex">📈 预期效果：补充后预计可进入前 50 名搜索结果</div></div></div></div>`;
+
+  const s2=`<div class="report-card"><div class="section-header" onclick="tb(this)">
+  <span class="step ${rel.level==='high'?'step-green':rel.level==='weak'?'step-yellow':'step-red'}">2</span><div class="sct-h3">相关性分析</div>
+  <span class="st ${lv.tagClass}">${lv.label}</span><span class="arrow">▾</span></div>
+  <div class="sb open">
+  <div class="relevance-bar"><span class="rl-dot ${lv.dot}"></span><span class="rl-label">${lv.label}</span></div>
+  <div style="margin-top:12px;border-top:1px solid #f0f0f0;padding-top:12px">
+    <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px">📋 相关性诊断说明</div>
+    ${reasonHtml}
+  </div>
+  </div></div>`;
+
+  const s3=recalled?`
+  <div class="report-card"><div class="section-header" onclick="tb(this)">
+  <span class="step step-blue">3</span><div class="sct-h3">排序位置</div>
+  <span class="st si">📍 第 ${rk} 位</span><span class="arrow">▾</span></div>
+  <div class="sb open">
+  <div class="metrics">
+  <div class="metric"><div class="l">总结果数</div><div class="v">${tot.toLocaleString()}</div></div>
+  <div class="metric"><div class="l">同类目排名</div><div class="v">第 ${crk} 位</div><div class="sn">同子类目</div></div>
+  <div class="metric"><div class="l">同品牌排名</div><div class="v">第 2 位</div></div>
+  </div>
+  <div style="margin-top:14px;font-size:13px;font-weight:600;margin-bottom:8px">同 Query 竞品 Top5 排名对比</div>
+  <table class="ct"><tr><th style="width:40px">#</th><th>SKUID</th><th>Title 摘要</th><th style="text-align:right">价格</th><th style="text-align:right">评分</th></tr>
+  ${comp.map(c=>`<tr${c.rank===rk&&rk<=5?' class="hl"':''}><td class="rk${c.rank===1?' rk1':''}">${c.rank}</td><td>${c.sku}</td><td>${c.title.length>30?c.title.slice(0,30)+'...':c.title}</td><td style="text-align:right">$${c.price}.00</td><td style="text-align:right">⭐ ${c.rating}</td></tr>`).join('')}
+  ${rk>5?`<tr class="hl"><td class="rk">${rk}</td><td><strong>${s}</strong></td><td><strong>← 当前 SKU</strong></td><td style="text-align:right"><strong>$${skuInfo.price}</strong></td><td style="text-align:right"><strong>⭐ ${skuInfo.rating}</strong></td></tr>`:''}
+  </table></div></div>`:'';
+
+  const issuesHtml=selected.map(i=>`<div class="ise ${i.sev}"><span class="ic">${i.ic}</span><div class="bd"><div class="tt">${i.tt}</div><div class="dt">${i.dt}</div></div></div>`).join('');
+  const sugHtml=selSug.map((u,i)=>`<div class="sug"${i>0?' style="margin-top:10px"':''}><div class="lb">${u.t} 建议 ${i+1}：${u.tt}</div><div class="tx">${u.tx}</div><div class="ex">📈 预期效果：${u.ep}</div></div>`).join('');
+
+  const banner=`<div class="sbanner" style="display:block">
+  <div class="stt">📋 <strong>"${query}"</strong> · <code>${s}</code></div>
+  <div class="rw"><div class="st"><div class="nm" style="color:${recalled?'#34c759':'#ff3b30'}">${recalled?'✅':'❌'}</div><div class="lb">召回</div></div>
+  <div class="st"><div class="nm" style="color:${rel.level==='high'?'#34c759':rel.level==='weak'?'#ff9500':'#ff3b30'}">${rel.level==='high'?'高':rel.level==='weak'?'弱':'不'}</div><div class="lb">相关</div></div>
+  <div class="st"><div class="nm" style="color:#1a73e8">${recalled?'#'+rk:'-'}</div><div class="lb">${recalled?'排序位':'N/A'}</div></div>
+  <div class="st"><div class="nm" style="color:#ff3b30">${sc}</div><div class="lb">严重</div></div>
+  <div class="st"><div class="nm" style="color:#ff9500">${nc}</div><div class="lb">一般</div></div>
+  <div class="st"><div class="nm" style="color:#34c759">${selSug.length}</div><div class="lb">建议</div></div></div></div>`;
+
+  return banner+s1+s2+s3+`
+  <div class="report-card"><div class="section-header" onclick="tb(this)">
+  <span class="step" style="background:#ff3b30">4</span><div class="sct-h3">问题诊断</div>
+  <span class="st ${sc>0?'sd':'sw'}">${sc>0?'🔴':'🟡'} 发现 ${selected.length} 个问题</span><span class="arrow">▾</span></div>
+  <div class="sb open"><div style="font-size:12px;color:#888;margin-bottom:10px">
+  <span class="sttag sth">${sc} 严重</span><span class="sttag stm">${nc} 一般</span></div>
+  <div class="issues">${issuesHtml}</div></div></div>`+`
+  <div class="report-card"><div class="section-header" onclick="tb(this)">
+  <span class="step" style="background:#34c759">5</span><div class="sct-h3">改善建议</div>
+  <span class="st sg">💡 ${selSug.length} 条建议</span><span class="arrow">▾</span></div>
+  <div class="sb open">${sugHtml}</div></div>`+`
+  <div class="report-card"><div class="ba">
+  <button class="btno" onclick="alert('报告已复制（Mock）')">📋 复制报告</button>
+  <button class="btno" onclick="alert('PDF导出Mock')">📥 导出 PDF</button>
+  <button class="btn-primary" style="padding:8px 18px;font-size:13px" onclick="run()">🔄 重新诊断</button>
+  </div></div>`;
+}
+</script>
+</body>
+</html>
